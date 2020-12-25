@@ -7,11 +7,6 @@ defmodule Deftype do
 
   @type metas :: Keyword.t()
 
-  @type attr_key :: atom()
-  @type attr_type :: module() | atom() | {:list, module() | atom()}
-  @type attr_meta :: Keyword.t()
-
-  @type attrs :: {attr_key(), attr_type(), attr_meta()}
 
   defmacro plugin(mod, cfg \\ []) do
     quote do

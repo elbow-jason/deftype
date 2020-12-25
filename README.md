@@ -48,7 +48,7 @@ The package can be installed by adding `deftype` to your list of dependencies in
 ```elixir
 def deps do
   [
-    {:deftype, github: "elbow-jason", branch: "main"}
+    {:deftype, github: "elbow-jason/deftype", branch: "main"}
   ]
 end
 ```

@@ -4,11 +4,12 @@ defmodule Deftype.Plugin do
   """
 
   @type cfg :: any()
+  @type plugins() :: [{module(), cfg}]
 
-  @callback call(cfg(), Deftype.metas(), Deftype.attrs()) :: Macro.t()
+  @callback call(cfg, plugins(), Deftype.metas(), Deftype.attrs()) :: Macro.t()
 
   @doc false
-  def call(mod, cfg, metas, attrs) do
-    mod.call(cfg, metas, attrs)
+  def call(mod, cfg, plugins, metas, attrs) do
+    mod.call(cfg, plugins, metas, attrs)
   end
 end

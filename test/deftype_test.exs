@@ -38,7 +38,12 @@ defmodule DeftypeTest do
     ]
 
     assert {:the_plugin_works, 0} in Simple2.__info__(:functions)
-    assert Simple2.the_plugin_works() == {[the_plugin_cfg: true], [aka: "S2"], [{:key, :type, [some: :meta]}]}
+    cfg = [the_plugin_cfg: true]
+    all_plugins = [{Deftype.Testing.SimplePlugin, [the_plugin_cfg: true]}]
+    metas = [aka: "S2"]
+    attrs =  [{:key, :type, [some: :meta]}]
+
+    assert Simple2.the_plugin_works() == {cfg, all_plugins, metas, attrs}
     assert Simple2.__deftype__(:attrs) == [{:key, :type, [some: :meta]}]
     assert Simple2.__deftype__(:metas) == [aka: "S2"]
     assert Simple2.__deftype__(:plugins) == [{Deftype.Testing.SimplePlugin, [the_plugin_cfg: true]}]

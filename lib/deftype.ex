@@ -77,6 +77,6 @@ defmodule Deftype do
     attrs_ast = Macro.escape(attrs)
 
     plugins = Module.get_attribute(caller_mod, :__deftype_plugins)
-    Enum.map(plugins, fn {plugin, cfg} -> Plugin.call(plugin, cfg, metas_ast, attrs_ast) end)
+    Enum.map(plugins, fn {plugin, cfg} -> Plugin.call(plugin, cfg, plugins, metas_ast, attrs_ast) end)
   end
 end

@@ -1,70 +1,22 @@
 defmodule Deftype do
-  alias Deftype.Plugin
+  def plugins(type), do: type.__deftype__(:plugins)
 
-  @type plugin_cfg :: Plugin.cfg()
+  def metas(type), do: type.__deftype__(:metas)
 
-  @type name :: String.t()
+  def attrs(type), do: type.__deftype__(:attrs)
 
-  @type metas :: Keyword.t()
-
-
-  defmacro plugin(mod, cfg \\ []) do
-    quote do
-      item = {unquote(mod), unquote(cfg)}
-      Module.put_attribute(__MODULE__, :__raw_deftype_plugins, item)
-    end
-  end
-
-  defmacro attr(key, type, meta \\ []) when is_atom(key) and is_list(meta) do
-    quote do
-      item = {unquote(key), unquote(type), unquote(meta)}
-      Module.put_attribute(__MODULE__, :__raw_deftype_attrs, item)
-    end
-  end
-
-  defmacro meta(key, value) when is_atom(key) do
-    quote do
-      item = {unquote(key), unquote(value)}
-      Module.put_attribute(__MODULE__, :__raw_deftype_metas, item)
-    end
-  end
-
-  defmacro deftype(do: block) do
-    quote do
-      # setup accumulating module attrs
-      Module.register_attribute(__MODULE__, :__raw_deftype_attrs, accumulate: true)
-      Module.register_attribute(__MODULE__, :__raw_deftype_metas, accumulate: true)
-      Module.register_attribute(__MODULE__, :__raw_deftype_plugins, accumulate: true)
-
-      # import macros for use in the block
-      import Deftype, only: [attr: 3, attr: 2, plugin: 1, plugin: 2, meta: 2]
-
-      # inject the block
-      unquote(block)
-
-      @__deftype_attrs Enum.reverse(@__raw_deftype_attrs)
-      @__deftype_metas Enum.reverse(@__raw_deftype_metas)
-      @__deftype_plugins Enum.reverse(@__raw_deftype_plugins)
-
-      Module.delete_attribute(__MODULE__, :__raw_deftype_attrs)
-      Module.delete_attribute(__MODULE__, :__raw_deftype_plugins)
-      Module.delete_attribute(__MODULE__, :__raw_deftype_metas)
-
-      def __deftype__(:attrs), do: @__deftype_attrs
-      def __deftype__(:metas), do: @__deftype_metas
-      def __deftype__(:plugins), do: @__deftype_plugins
-    end
-  end
-
+  @doc false
+  @spec __using__(Keyword.t()) :: Macro.t()
   defmacro __using__(_opts) do
     quote do
-      import Deftype, only: [deftype: 1]
+      import Deftype.Macros, only: [deftype: 1]
 
       @before_compile Deftype
     end
   end
 
   @doc false
+  @spec __using__(Macro.Env.t()) :: Macro.t()
   defmacro __before_compile__(_env) do
     # generate the AST of the plugins.
     alias Deftype.Plugin
@@ -77,6 +29,9 @@ defmodule Deftype do
     attrs_ast = Macro.escape(attrs)
 
     plugins = Module.get_attribute(caller_mod, :__deftype_plugins)
-    Enum.map(plugins, fn {plugin, cfg} -> Plugin.call(plugin, cfg, plugins, metas_ast, attrs_ast) end)
+
+    Enum.map(plugins, fn {plugin, cfg} ->
+      Plugin.call_step(:before_compile, plugin, cfg, plugins, metas_ast, attrs_ast)
+    end)
   end
 end

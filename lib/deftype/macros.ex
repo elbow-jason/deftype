@@ -53,16 +53,13 @@ defmodule Deftype.Macros do
       def __deftype__(:metas), do: @__deftype_metas
       def __deftype__(:plugins), do: @__deftype_plugins
 
-      Enum.map(@__deftype_plugins, fn {plugin, cfg} ->
-        Plugin.call_step(
-          :inline,
-          plugin,
-          cfg,
-          @__deftype_plugins,
-          @__deftype_metas,
-          @__deftype_attrs
-        )
-      end)
+      # this is inlined because `defstruct` does not "act right"
+      # when not inlined.
+      if Deftype.Defstruct in Enum.map(@__deftype_plugins, fn {p, _} -> p end) do
+        @struct_fields Deftype.Defstruct.attrs_to_struct_fields(@__deftype_attrs)
+
+        defstruct @struct_fields
+      end
     end
   end
 end

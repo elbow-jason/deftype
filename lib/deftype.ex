@@ -31,7 +31,7 @@ defmodule Deftype do
     plugins = Module.get_attribute(caller_mod, :__deftype_plugins)
 
     Enum.map(plugins, fn {plugin, cfg} ->
-      Plugin.call_step(:before_compile, plugin, cfg, plugins, metas_ast, attrs_ast)
+      Plugin.call(plugin, cfg, plugins, metas_ast, attrs_ast)
     end)
   end
 end

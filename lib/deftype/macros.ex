@@ -144,8 +144,10 @@ defmodule Deftype.Macros do
     aliases_used =
       for module <- aliased do
         quote do
-          # silence unused alias warnings
-          _ = unquote(module).__info__(:functions)
+          if Code.ensure_loaded?(unquote(module)) && function_exported?(unquote(module), :info, 1) do
+            # hack: silence unused alias warnings
+            _ = unquote(module).__info__(:functions)
+          end
         end
       end
 

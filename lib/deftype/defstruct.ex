@@ -1,19 +1,14 @@
 defmodule Deftype.Defstruct do
   @behaviour Deftype.Plugin
 
-  def call_during(_, _, _, _) do
-    :inline
-  end
+  def call(_plugin_cfg, _plugins, _metas, attrs) do
+    attrs = Macro.escape(attrs)
 
-  def call(_plugin_cfg, _plugins, _metas, _attrs) do
     quote do
-      []
+      @struct_fields Enum.map(unquote(attrs), fn {name, _, meta} ->
+                       {name, Keyword.get(meta, :default, nil)}
+                     end)
+      defstruct @struct_fields
     end
-  end
-
-  def attrs_to_struct_fields(attrs) do
-    Enum.map(attrs, fn {name, _, meta} ->
-      {name, Keyword.get(meta, :default, nil)}
-    end)
   end
 end

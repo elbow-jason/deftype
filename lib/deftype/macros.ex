@@ -24,9 +24,12 @@ defmodule Deftype.Macros do
     metas = Map.fetch!(context, :metas)
     plugins = Map.fetch!(context, :plugins)
 
-    Enum.map(plugins, fn {plugin, cfg} ->
-      Plugin.call(plugin, cfg, plugins, metas, attrs)
-    end)
+    plugins_ast =
+      Enum.map(plugins, fn {plugin, cfg} ->
+        Plugin.call(plugin, cfg, plugins, metas, attrs)
+      end)
+
+    {:__block__, [], plugins_ast}
   end
 
   defp extract(caller, {:__block__, _, block}) do
@@ -63,33 +66,27 @@ defmodule Deftype.Macros do
     end)
   end
 
-  defp build_add_entries(caller, agent, {:attr, _, [name, type]}) do
-    name = resolve_value(caller, agent, name)
-    type = resolve_value(caller, agent, type)
-    add_entry(agent, {:attrs, {name, type, []}})
+  defp build_add_entries(_caller, agent, {:attr, meta, [name, type]}) do
+    entry = {:{}, meta, [name, type, []]}
+    add_entry(agent, {:attrs, entry})
   end
 
-  defp build_add_entries(caller, agent, {:attr, _, [name, type, config]}) do
-    name = resolve_value(caller, agent, name)
-    type = resolve_value(caller, agent, type)
-    config = resolve_value(caller, agent, config)
-    add_entry(agent, {:attrs, {name, type, config}})
+  defp build_add_entries(_caller, agent, {:attr, meta, [name, type, config]}) do
+    entry = {:{}, meta, [name, type, config]}
+    add_entry(agent, {:attrs, entry})
   end
 
-  defp build_add_entries(caller, agent, {:meta, _, [key, value]}) do
-    key = resolve_value(caller, agent, key)
-    value = resolve_value(caller, agent, value)
+  defp build_add_entries(_caller, agent, {:meta, _, [key, value]}) do
     add_entry(agent, {:metas, {key, value}})
   end
 
   defp build_add_entries(caller, agent, {:plugin, _, [module_ast]}) do
-    module = resolve_value(caller, agent, module_ast)
+    module = resolve_module(caller, agent, module_ast)
     add_entry(agent, {:plugins, {module, []}})
   end
 
   defp build_add_entries(caller, agent, {:plugin, _, [module, config]}) do
-    module = resolve_value(caller, agent, module)
-    config = resolve_value(caller, agent, config)
+    module = resolve_module(caller, agent, module)
     add_entry(agent, {:plugins, {module, config}})
   end
 
@@ -97,70 +94,37 @@ defmodule Deftype.Macros do
     raise "unhandled Deftype entry: \n#{Macro.to_string(got)}\n"
   end
 
-  defguardp is_scalar(v) when is_number(v) or is_binary(v) or is_atom(v)
-
-  defp resolve_value(caller, agent, {:__aliases__, _, parts} = aliased) do
+  defp resolve_module(caller, agent, {:__aliases__, _, parts} = aliased) do
     :ok = add_entry(agent, {:aliased, aliased})
     short_name = Module.concat(parts)
     long_name = Keyword.get(caller.aliases, short_name, short_name)
-    resolve_value(caller, agent, long_name)
-  end
 
-  # runtime ast
-  defp resolve_value(caller, agent, {:{}, meta, elems})
-       when is_list(meta) and is_list(elems) do
-    elems
-    |> Enum.map(fn e -> resolve_value(caller, agent, e) end)
-    |> List.to_tuple()
-  end
+    case long_name do
+      {:__aliases__, _, long_parts} ->
+        Module.concat(long_parts)
 
-  defp resolve_value(caller, agent, {:%, _, [module_ast, {:%{}, _, values}]}) do
-    module = resolve_value(caller, agent, module_ast)
-    values = resolve_value(caller, agent, values)
-    struct!(module, values)
-  end
-
-  defp resolve_value(caller, agent, {:%{}, _, values}) do
-    values = resolve_value(caller, agent, values)
-    Map.new(values)
-  end
-
-  # runtime ast
-  defp resolve_value(caller, agent, {key, meta, args})
-       when is_atom(key) and is_list(meta) and is_list(args) do
-    args = Enum.map(args, fn a -> resolve_value(caller, agent, a) end)
-    key = resolve_value(caller, agent, key)
-    {key, meta, args}
-  end
-
-  defp resolve_value(_caller, _agent, val) when is_scalar(val) do
-    val
-  end
-
-  defp resolve_value(caller, agent, list) when is_list(list) do
-    Enum.map(list, fn item -> resolve_value(caller, agent, item) end)
-  end
-
-  defp resolve_value(caller, agent, {k, v}) do
-    {resolve_value(caller, agent, k), resolve_value(caller, agent, v)}
+      module when is_atom(module) ->
+        module
+    end
   end
 
   defmacro deftype(do: block) do
     context = extract(__CALLER__, block)
-    {aliased, context} = Map.pop!(context, :aliased)
-    context_ast = Macro.escape(context)
+
+    %{
+      aliased: aliased,
+      attrs: attrs,
+      metas: metas,
+      plugins: plugins
+    } = context
 
     prelude =
       quote do
         import Deftype.Macros, only: [attr: 3, attr: 2, plugin: 1, plugin: 2, meta: 2]
 
-        @__deftype_attrs Map.fetch!(unquote(context_ast), :attrs)
-        @__deftype_metas Map.fetch!(unquote(context_ast), :metas)
-        @__deftype_plugins Map.fetch!(unquote(context_ast), :plugins)
-
-        def __deftype__(:attrs), do: @__deftype_attrs
-        def __deftype__(:metas), do: @__deftype_metas
-        def __deftype__(:plugins), do: @__deftype_plugins
+        def __deftype__(:attrs), do: unquote(attrs)
+        def __deftype__(:metas), do: unquote(metas)
+        def __deftype__(:plugins), do: unquote(plugins)
       end
 
     aliases_used =

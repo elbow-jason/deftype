@@ -2,8 +2,6 @@ defmodule Deftype.Defstruct do
   @behaviour Deftype.Plugin
 
   def call(_plugin_cfg, _plugins, _metas, attrs) do
-    attrs = Macro.escape(attrs)
-
     quote do
       @struct_fields Enum.map(unquote(attrs), fn {name, _, meta} ->
                        {name, Keyword.get(meta, :default, nil)}

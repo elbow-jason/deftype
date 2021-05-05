@@ -75,19 +75,18 @@ defmodule DeftypeTest do
     assert default_struct.key2 == "some default"
   end
 
-  def compile_testing_file(path_rel_to_testing) do
-    path = Path.join([__DIR__, "testing", path_rel_to_testing])
-    src = File.read!(path)
-    quoted = Code.string_to_quoted!(src)
-    assert {{:module, module, _bytecode, [true]}, _binds} = Code.eval_quoted(quoted)
-    assert is_atom(module)
-    module
-  end
+  # def compile_testing_file(path_rel_to_testing) do
+  #   path = Path.join([__DIR__, "testing", path_rel_to_testing])
+  #   src = File.read!(path)
+  #   quoted = Code.string_to_quoted!(src)
+  #   assert {{:module, module, _bytecode, [true]}, _binds} = Code.eval_quoted(quoted)
+  #   assert is_atom(module)
+  #   module
+  # end
 
-  describe "Plugin.call/4" do
-    test "is given the correct arguments" do
-      module = compile_testing_file("plugin_call_values.exs")
-      assert module == Deftype.Testing.PluginCallValues.Impl
+  describe "internal callbacks" do
+    test "work" do
+      module = Deftype.Testing.SimplePluginNoQuote.Impl
 
       assert module.__deftype__(:attrs) == [
                {:key1, :string, []},
@@ -95,9 +94,15 @@ defmodule DeftypeTest do
              ]
 
       assert module.__deftype__(:metas) == [
-               hello_world_unaliased: Deftype.Testing.PluginCallValues.My.Nested.HelloWorld,
-               hello_world_aliased_as: Deftype.Testing.PluginCallValues.My.Nested.HelloWorld,
-               hello_world_aliased_normal: Deftype.Testing.PluginCallValues.My.Nested.HelloWorld
+               hello_world_unaliased: Deftype.Testing.SimplePluginNoQuote.My.Nested.HelloWorld,
+               hello_world_aliased_as: Deftype.Testing.SimplePluginNoQuote.My.Nested.HelloWorld,
+               hello_world_aliased_normal:
+                 Deftype.Testing.SimplePluginNoQuote.My.Nested.HelloWorld
+             ]
+
+      assert module.__deftype__(:plugins) == [
+               {Deftype.Testing.SimplePluginNoQuote,
+                [primary_key: {:id, :binary_id, []}, more: :stuff, right: :here]}
              ]
     end
   end

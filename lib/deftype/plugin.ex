@@ -5,8 +5,8 @@ defmodule Deftype.Plugin do
 
   @type cfg :: any()
   @type plugins() :: [{module(), cfg}]
-  @type metas :: Deftype.metas()
-  @type attrs :: Deftype.attrs()
+  @type metas :: Macro.t()
+  @type attrs :: Macro.t()
 
   @callback call(cfg(), plugins(), metas(), attrs()) :: Macro.t()
 

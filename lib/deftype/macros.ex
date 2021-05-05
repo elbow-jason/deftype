@@ -106,9 +106,31 @@ defmodule Deftype.Macros do
     resolve_value(caller, agent, long_name)
   end
 
-  defp resolve_value(caller, agent, {key, meta, args}) do
+  # runtime ast
+  defp resolve_value(caller, agent, {:{}, meta, elems})
+       when is_list(meta) and is_list(elems) do
+    elems
+    |> Enum.map(fn e -> resolve_value(caller, agent, e) end)
+    |> List.to_tuple()
+  end
+
+  defp resolve_value(caller, agent, {:%, _, [module_ast, {:%{}, _, values}]}) do
+    module = resolve_value(caller, agent, module_ast)
+    values = resolve_value(caller, agent, values)
+    struct!(module, values)
+  end
+
+  defp resolve_value(caller, agent, {:%{}, _, values}) do
+    values = resolve_value(caller, agent, values)
+    Map.new(values)
+  end
+
+  # runtime ast
+  defp resolve_value(caller, agent, {key, meta, args})
+       when is_atom(key) and is_list(meta) and is_list(args) do
     args = Enum.map(args, fn a -> resolve_value(caller, agent, a) end)
-    {resolve_value(caller, agent, key), meta, args}
+    key = resolve_value(caller, agent, key)
+    {key, meta, args}
   end
 
   defp resolve_value(_caller, _agent, val) when is_scalar(val) do

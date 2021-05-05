@@ -5,10 +5,11 @@ defmodule Deftype.Testing.PluginCallValues.Asserter do
 
   @impl Deftype.Plugin
   def call(cfg, plugins, metas, attrs) do
-    assert cfg == [more: :stuff, right: :here]
+    expected_cfg = [primary_key: {:id, :binary_id, []}, more: :stuff, right: :here]
+    assert cfg == expected_cfg
 
     assert plugins == [
-             {Deftype.Testing.PluginCallValues.Asserter, [more: :stuff, right: :here]}
+             {Deftype.Testing.PluginCallValues.Asserter, expected_cfg}
            ]
 
     assert is_list(metas)
@@ -38,7 +39,7 @@ defmodule Deftype.Testing.PluginCallValues.Impl do
   alias Deftype.Testing.PluginCallValues.Asserter
 
   deftype do
-    plugin(Asserter, more: :stuff, right: :here)
+    plugin(Asserter, primary_key: {:id, :binary_id, []}, more: :stuff, right: :here)
     meta(:hello_world_unaliased, Deftype.Testing.PluginCallValues.My.Nested.HelloWorld)
     meta(:hello_world_aliased_as, MNHW)
     meta(:hello_world_aliased_normal, HelloWorld)

@@ -91,7 +91,13 @@ defmodule Deftype.Macros do
   end
 
   defp build_add_entries(_caller, _agent, got) do
-    raise "unhandled Deftype entry: \n#{Macro.to_string(got)}\n"
+    raise """
+    Unhandled Deftype entry!
+
+    code: \n#{Macro.to_string(got)}\n
+
+    ast: \n#{inspect(got)}\n
+    """
   end
 
   defp resolve_module(caller, agent, {:__aliases__, _, parts} = aliased) do

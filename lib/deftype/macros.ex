@@ -90,7 +90,7 @@ defmodule Deftype.Macros do
     add_entry(agent, {:plugins, {module, config}})
   end
 
-  defp build_add_entries(_caller, got, _agent) do
+  defp build_add_entries(_caller, _agent, got) do
     raise "unhandled Deftype entry: \n#{Macro.to_string(got)}\n"
   end
 

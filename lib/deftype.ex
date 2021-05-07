@@ -10,14 +10,6 @@ defmodule Deftype do
   defmacro __using__(_opts) do
     quote do
       import Deftype.Macros, only: [deftype: 1]
-
-      @before_compile Deftype
     end
-  end
-
-  @doc false
-  @spec __using__(Macro.Env.t()) :: Macro.t()
-  defmacro __before_compile__(_env) do
-    # generate the AST of the plugins.
   end
 end

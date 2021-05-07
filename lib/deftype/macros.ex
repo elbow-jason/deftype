@@ -90,7 +90,7 @@ defmodule Deftype.Macros do
     add_entry(agent, {:plugins, {module, config}})
   end
 
-  defp build_add_entries(caller, agent, {:block, _, entries}) do
+  defp build_add_entries(caller, agent, {:__block__, _, entries}) do
     :ok =
       Enum.each(entries, fn entry ->
         build_add_entries(caller, agent, entry)

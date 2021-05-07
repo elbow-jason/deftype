@@ -90,6 +90,15 @@ defmodule Deftype.Macros do
     add_entry(agent, {:plugins, {module, config}})
   end
 
+  defp build_add_entries(caller, agent, {:block, _, entries}) do
+    :ok =
+      Enum.each(entries, fn entry ->
+        build_add_entries(caller, agent, entry)
+      end)
+
+    :ok
+  end
+
   defp build_add_entries(_caller, _agent, got) do
     raise """
     Unhandled Deftype entry!
